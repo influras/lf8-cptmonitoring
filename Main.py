@@ -3,9 +3,9 @@ import psutil
 import logging
 import tkinter as tk
 
-
 log_file = "C:/Monitoring Logs/app.log"
 logging.basicConfig(filename=log_file, level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 
 def update_info():
     # Löscht die vorherigen Werte in der Konsole
@@ -58,6 +58,7 @@ def update_info():
 
     root.after(1000, update_info)  # Aktualisiere alle 3 Sekunden
 
+
 root = tk.Tk()
 root.title("Hardware Monitoring")
 root.geometry("600x400")
@@ -86,3 +87,5 @@ processes_text.pack()
 update_info()  # Starte die Aktualisierung der Informationen
 
 root.mainloop()
+
+
