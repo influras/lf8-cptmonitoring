@@ -6,6 +6,7 @@ import tkinter as tk
 log_file = "C:/Monitoring Logs/app.log"
 logging.basicConfig(filename=log_file, level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+# I bims der Kai und ich bin jetzt auch dabei!
 
 def update_info():
     # Löscht die vorherigen Werte in der Konsole
