@@ -84,8 +84,9 @@ processes_label.pack()
 processes_text = tk.Text(root, height=10, width=60, state=tk.DISABLED)
 processes_text.pack()
 
+send_email_button = tk.Button(root, text="Send via Email", )
+send_email_button.pack(pady=5)
+
 update_info()  # Starte die Aktualisierung der Informationen
 
 root.mainloop()
-
-
