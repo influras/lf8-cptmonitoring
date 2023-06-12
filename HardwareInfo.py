@@ -61,26 +61,26 @@ def send_email_wrapper(email_entry):
                 last_line_timestamp = time.mktime(time.strptime(last_line_timestamp_str, "%Y-%m-%d %H:%M:%S"))
 
         # Select log entries from the last 60 seconds
-    if last_line_timestamp is not None:
-        current_time = time.time()
-        relevant_lines = []
-        for line in lines:
-            timestamp_match = re.search(r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', line)
-            if timestamp_match:
-                timestamp_str = timestamp_match.group(1)
-                timestamp = time.mktime(time.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S"))
-                if current_time - timestamp <= 60:
-                    relevant_lines.append(line)
+        if last_line_timestamp is not None:
+            current_time = time.time()
+            relevant_lines = []
+            for line in lines:
+                timestamp_match = re.search(r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', line)
+                if timestamp_match:
+                    timestamp_str = timestamp_match.group(1)
+                    timestamp = time.mktime(time.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S"))
+                    if current_time - timestamp <= 60:
+                        relevant_lines.append(line)
 
-        # Join the relevant lines to create the updated file_contents
-        file_contents = ''.join(relevant_lines)
-    else:
-        # If no last line or timestamp found, use the entire file contents
-        with open(hardwarestatus_file_path, 'r') as file:
-            file_contents = file.read()
+            # Join the relevant lines to create the updated file_contents
+            file_contents = ''.join(relevant_lines)
+        else:
+            # If no last line or timestamp found, use the entire file contents
+            with open(hardwarestatus_file_path, 'r') as file:
+                file_contents = file.read()
 
-    emServ.send_email(email_address, file_contents, hostname)
-    if emServ.send_email(email_address, file_contents, hostname) is True:
+    success = emServ.send_email(email_address, file_contents, hostname)
+    if success is True:
         return True
     else:
         return False
@@ -102,14 +102,14 @@ def emailSendWindow():
             if send_email_result is True:
                 badEmailAddress.pack_forget()
                 emailSentError.pack_forget()
-                emailSentConformation.pack()
+                emailSentConfirmation.pack(pady=3)
             else:
                 badEmailAddress.pack_forget()
-                emailSentConformation.pack_forget()
-                emailSentError.pack()
+                emailSentConfirmation.pack_forget()
+                emailSentError.pack(pady=3)
         else:
             emailSentError.pack_forget()
-            emailSentConformation.pack_forget()
+            emailSentConfirmation.pack_forget()
             badEmailAddress.pack(pady=3)
 
     sendButton = Button(sendWindow, text="Senden", command=send_email)
@@ -117,11 +117,14 @@ def emailSendWindow():
 
     badEmailAddress = Label(sendWindow, text="Falsches E-Mail Format! - Richtig: xx@xx.xx", foreground="red")
     emailSentError = Label(sendWindow, text="E-Mail konnte nicht gesendet werden!", foreground="red")
-    emailSentConformation = Label(sendWindow, text="E-Mail erfolgreich versendet!", foreground="green")
+    emailSentConfirmation = Label(sendWindow, text="E-Mail erfolgreich versendet!", foreground="green")
+
+
+last_logging_time = time.time()
 
 
 def update_info():
-    global prev_cpu_percent, prev_ram_percent, prev_drive_info, prev_net_io, prev_processes
+    global prev_cpu_percent, prev_ram_percent, prev_drive_info, prev_net_io, prev_processes, last_logging_time
 
     cpu_percent = psutil.cpu_percent()
     ram = psutil.virtual_memory()
@@ -130,13 +133,12 @@ def update_info():
     net_io = psutil.net_io_counters()
     processes = psutil.process_iter(["pid", "name"])
 
-    # Update log file
-    logging.info("Update")
+
 
     # Update CPU utilization
     cpu_message = f"CPU-Auslastung: {cpu_percent}%"
     cpu_label.config(text=cpu_message)
-    logging.info(cpu_message)
+
     prev_cpu_percent = cpu_percent
 
     # Update RAM utilization
@@ -144,7 +146,7 @@ def update_info():
     ram_total = round(ram.total / 1024 ** 3, 2)  # in Gigabytes
     ram_message = f"RAM-Auslastung: {ram_percent}%, Verwendet: {ram_usage} GB, Insgesamt: {ram_total} GB"
     ram_label.config(text=ram_message)
-    logging.info(ram_message)
+
     prev_ram_percent = ram_percent
 
     # Update drives utilization
@@ -156,7 +158,7 @@ def update_info():
         drive_total = round(drive_usage.total / 1024 ** 3, 2)  # in Gigabytes
         drive_message = f"Laufwerk {drive.device}: Auslastung: {drive_percent}%, Frei: {drive_free} GB, Insgesamt: {drive_total} GB\n"
         drive_info += drive_message
-        logging.info(drive_message)
+
     drives_text.config(state=NORMAL)
     drives_text.delete("1.0", END)
     drives_text.insert(END, drive_info)
@@ -166,7 +168,7 @@ def update_info():
     # Update network utilization
     net_message = f"Netzwerkauslastung: Gesendet: {net_io.bytes_sent} Bytes, Empfangen: {net_io.bytes_recv} Bytes"
     net_label.config(text=net_message)
-    logging.info(net_message)
+
     prev_net_io = net_io
 
     # Update processes information
@@ -176,14 +178,27 @@ def update_info():
         process_name = process.info["name"]
         process_message = f"Prozess: {process_name} (PID: {process_pid})\n"
         process_info += process_message
-        logging.info(process_message)
+
     processes_text.config(state=NORMAL)
     processes_text.delete("1.0", END)
     processes_text.insert(END, process_info)
     processes_text.config(state=DISABLED)
     prev_processes = list(processes)
 
-    root.after(10000, update_info)  # update every 3 seconds
+    current_time = time.time()
+    time_difference = current_time - last_logging_time
+    if time_difference >= 30:
+        # Update log file
+        logging.info("Update")
+        logging.info(cpu_message)
+        logging.info(ram_message)
+        logging.info(drive_message)
+        logging.info(net_message)
+        logging.info(process_message)
+
+        last_logging_time = current_time
+
+    root.after(3000, update_info)  # update every 10 seconds
 
 
 send_email_button = Button(root, text="Send via Email", command=emailSendWindow)

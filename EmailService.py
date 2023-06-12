@@ -7,7 +7,7 @@ from tkinter import DISABLED
 
 # E-Mail details
 sender_email='youremail'
-sender_password='yourpasswort'
+sender_password='yourpass'
 
 error_window = Tk()
 error_window.geometry("600x600")
